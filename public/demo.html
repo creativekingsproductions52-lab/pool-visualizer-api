@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pool Visualizer Demo</title>
+  <style>
+    :root {
+      --bg-1: #0f172a;
+      --bg-2: #1d4ed8;
+      --bg-3: #7c3aed;
+      --surface: rgba(15, 23, 42, 0.62);
+      --surface-border: rgba(148, 163, 184, 0.25);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #22d3ee;
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.30), transparent 30%),
+        radial-gradient(circle at 85% 10%, rgba(139, 92, 246, 0.35), transparent 32%),
+        radial-gradient(circle at 50% 90%, rgba(34, 211, 238, 0.25), transparent 30%),
+        linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 42%, var(--bg-3) 100%);
+      background-attachment: fixed;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 44px 20px 64px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 22px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .pill {
+      margin: 0 auto;
+      border: 1px solid rgba(125, 211, 252, 0.4);
+      color: #bae6fd;
+      background: rgba(14, 116, 144, 0.2);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      width: fit-content;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.3rem);
+      line-height: 1.12;
+      text-wrap: balance;
+    }
+
+    .subtitle {
+      margin: 0 auto;
+      max-width: 760px;
+      color: #cbd5e1;
+      font-size: 1.05rem;
+      line-height: 1.65;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 12px 40px rgba(2, 6, 23, 0.45);
+      padding: 22px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 1.22rem;
+      color: #f8fafc;
+    }
+
+    .how-it-works {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .how-it-works li {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: start;
+      color: #cbd5e1;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-weight: 700;
+      color: #082f49;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .kpi {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.45);
+    }
+
+    .kpi .label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .kpi .value {
+      font-size: 1.08rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .addresses {
+      display: grid;
+      gap: 8px;
+    }
+
+    .address {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(125, 211, 252, 0.35);
+      border-radius: 12px;
+      background: rgba(3, 105, 161, 0.2);
+      color: #e0f2fe;
+      padding: 10px 12px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .address:hover {
+      transform: translateY(-1px);
+      background: rgba(14, 116, 144, 0.32);
+      border-color: rgba(56, 189, 248, 0.65);
+    }
+
+    .tiny {
+      margin-top: 10px;
+      color: #93c5fd;
+      font-size: 0.8rem;
+    }
+
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      color: #cbd5e1;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <div class="pill">Live Demo · Pool Visualizer Widget</div>
+      <h1>Turn Any Home Address into a Cinematic Backyard Pool Preview</h1>
+      <p class="subtitle">
+        This demo embeds the exact widget your clients can add to WordPress, Webflow,
+        Shopify, or any custom website using a single script.
+      </p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Try the Widget</h2>
+        <div data-pool-visualizer data-title="Pool Visualizer" data-color="#0ea5e9"></div>
+      </article>
+
+      <aside class="card">
+        <h2>How It Works (7 Steps)</h2>
+        <ol class="how-it-works">
+          <li><span class="step-num">1</span><span>Geocode the street address into precise latitude/longitude coordinates.</span></li>
+          <li><span class="step-num">2</span><span>Capture top-down satellite imagery for lot context.</span></li>
+          <li><span class="step-num">3</span><span>Render four oblique 3D views around the property.</span></li>
+          <li><span class="step-num">4</span><span>Use AI to analyze the backyard and suggest ideal placement.</span></li>
+          <li><span class="step-num">5</span><span>Select the best camera angle focused on the backyard.</span></li>
+          <li><span class="step-num">6</span><span>Edit in a photorealistic pool while preserving architecture.</span></li>
+          <li><span class="step-num">7</span><span>Generate an 8-second cinematic drone-style reveal video.</span></li>
+        </ol>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">Estimated Cost / Generation</div>
+            <div class="value">~$3.40</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Typical Runtime</div>
+            <div class="value">~3–5 minutes</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="card" style="margin-top: 20px;">
+      <h2>Sample Addresses to Try</h2>
+      <div class="addresses" id="sample-addresses">
+        <button class="address" data-address="1600 Amphitheatre Parkway, Mountain View, CA">Google HQ — 1600 Amphitheatre Parkway, Mountain View, CA</button>
+        <button class="address" data-address="1 Apple Park Way, Cupertino, CA">Apple Park — 1 Apple Park Way, Cupertino, CA</button>
+        <button class="address" data-address="1 Hacker Way, Menlo Park, CA">Meta HQ — 1 Hacker Way, Menlo Park, CA</button>
+        <button class="address" data-address="350 Fifth Avenue, New York, NY">Empire State Building — 350 Fifth Avenue, New York, NY</button>
+        <button class="address" data-address="4059 Mt Lee Dr, Hollywood, CA">Hollywood Sign Area — 4059 Mt Lee Dr, Hollywood, CA</button>
+      </div>
+      <p class="tiny">Tip: click an address to auto-fill the widget input.</p>
+    </section>
+
+    <footer>
+      Built for fast client demos and production embedding.
+    </footer>
+  </main>
+
+  <script>
+    window._PV_API_URL = '/api/visualize';
+
+    document.addEventListener('click', function (event) {
+      const button = event.target.closest('.address');
+      if (!button) return;
+      const addressInput = document.getElementById('pv-address');
+      if (!addressInput) return;
+      addressInput.value = button.dataset.address || '';
+      addressInput.focus();
+      addressInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  </script>
+  <script src="/widget/pool-visualizer-widget.js"></script>
+</body>
+</html>

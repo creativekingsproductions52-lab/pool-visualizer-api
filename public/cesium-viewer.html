@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.123/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; }
+    #c { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="c"></div>
+  <script>
+    (async () => {
+      const p = new URLSearchParams(location.search);
+
+      Cesium.Ion.defaultAccessToken = "placeholder";
+
+      const viewer = new Cesium.Viewer("c", {
+        animation: false,
+        baseLayerPicker: false,
+        fullscreenButton: false,
+        geocoder: false,
+        homeButton: false,
+        timeline: false,
+      });
+
+      viewer.scene.globe.show = false;
+
+      const tileset = await Cesium.Cesium3DTileset.fromUrl(
+        `https://tile.googleapis.com/v1/3dtiles/root.json?key=${p.get("key")}`
+      );
+      viewer.scene.primitives.add(tileset);
+
+      const center = Cesium.Cartesian3.fromDegrees(+p.get("lng"), +p.get("lat"), 0);
+      viewer.camera.lookAt(
+        center,
+        new Cesium.HeadingPitchRange(
+          Cesium.Math.toRadians(+p.get("heading")),
+          Cesium.Math.toRadians(+(p.get("pitch") || -50)),
+          +(p.get("range") || 130)
+        )
+      );
+
+      let stable = 0;
+      await new Promise(resolve => {
+        (function tick() {
+          viewer.render();
+          stable = tileset.tilesLoaded ? stable + 1 : 0;
+          if (stable > 30) return resolve();
+          requestAnimationFrame(tick);
+        })();
+        setTimeout(resolve, 25000);
+      });
+
+      window.__ready = true;
+    })();
+  </script>
+</body>
+</html>
