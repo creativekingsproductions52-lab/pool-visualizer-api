@@ -204,8 +204,6 @@ House architecture MUST stay faithful to input image. ${analysis.render_prompt}`
     {
       model: 'google/veo-3.1',
       prompt,
-      input_references: [{ type: 'image_url', image_url: { url: `data:image/png;base64,${editedB64}` } }],
-      aspect_ratio: '16:9',
       duration: 8,
       resolution: '720p',
     },
@@ -213,6 +211,9 @@ House architecture MUST stay faithful to input image. ${analysis.render_prompt}`
   );
 
   const id = startRes.data.id;
+  if (!id) {
+    throw new Error(`Video generation did not return a job id: ${JSON.stringify(startRes.data)}`);
+  }
 
   // Poll every 5s, up to 10 minutes (120 iterations)
   for (let i = 0; i < 120; i++) {
@@ -221,16 +222,30 @@ House architecture MUST stay faithful to input image. ${analysis.render_prompt}`
       `https://openrouter.ai/api/v1/videos/${id}`,
       { headers: OR_HEADERS }
     );
-    if (poll.data.status === 'completed') break;
-    if (poll.data.status === 'failed') throw new Error('Video generation failed');
+
+    if (poll.data.status === 'failed') {
+      throw new Error(`Video generation failed: ${JSON.stringify(poll.data)}`);
+    }
+
+    if (poll.data.status === 'completed') {
+      const videoUrl =
+        poll.data.video ||
+        poll.data.video_url ||
+        poll.data.url ||
+        poll.data.output_url ||
+        poll.data.unsigned_url ||
+        poll.data.unsigned_urls?.[0] ||
+        poll.data.content_url;
+
+      if (!videoUrl) {
+        throw new Error(`Video generation completed but no video URL found: ${JSON.stringify(poll.data)}`);
+      }
+
+      return videoUrl;
+    }
   }
 
-  // Use /content endpoint with auth header — unsigned_url returns 401
-  const dl = await axios.get(
-    `https://openrouter.ai/api/v1/videos/${id}/content`,
-    { headers: OR_HEADERS, responseType: 'arraybuffer' }
-  );
-  return Buffer.from(dl.data).toString('base64');
+  throw new Error('Video generation timed out before completion');
 }
 
 // ─── Main API Endpoint ─────────────────────────────────────────────────────
@@ -260,7 +275,7 @@ app.post('/api/visualize', async (req, res) => {
     const editedImg = await editPoolIntoImage(chosenImg, analysis);
 
     console.log(`[7/7] Generating cinematic video with Veo 3.1`);
-    const videoB64 = await generateVideo(editedImg, analysis);
+    const videoUrl = await generateVideo(editedImg, analysis);
 
     res.json({
       success: true,
@@ -268,7 +283,7 @@ app.post('/api/visualize', async (req, res) => {
       satellite_image: `data:image/jpeg;base64,${satellite}`,
       oblique_image: `data:image/png;base64,${chosenImg}`,
       edited_image: `data:image/png;base64,${editedImg}`,
-      video: `data:video/mp4;base64,${videoB64}`,
+      video: videoUrl,
     });
   } catch (err) {
     console.error('Pipeline error:', err.message);
