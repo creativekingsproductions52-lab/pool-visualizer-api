@@ -1,11 +1,5 @@
 require('dotenv').config();
 
-// Allow Playwright to find Chromium when installed in a custom path
-if (!process.env.PLAYWRIGHT_BROWSERS_PATH) {
-  process.env.PLAYWRIGHT_BROWSERS_PATH = require('path').join(
-    require('os').homedir(), '.playwright-browsers'
-  );
-}
 
 const express = require('express');
 const cors = require('cors');
