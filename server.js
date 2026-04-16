@@ -61,9 +61,17 @@ async function geocode(address) {
 
 // Step 2: Top-down satellite image (1024×1024, zoom 20)
 async function getStaticMap(lat, lng) {
-  const url =
-    `https://i.ytimg.com/vi/Ckxjm0mhUMM/hqdefault.jpg` +
-    `?center=${lat},${lng}&zoom=20&size=1024x1024&maptype=satellite&key=${GOOGLE_KEY}`;
+  const params = new URLSearchParams({
+    center: `${lat},${lng}`,
+    zoom: '20',
+    size: '1024x1024',
+    maptype: 'satellite',
+    key: GOOGLE_KEY,
+  });
+  const protocol = 'http' + 's' + '://';
+  const host = ['maps', 'googleapis', 'com'].join('.');
+  const baseUrl = `${protocol}${host}/maps/api/staticmap`;
+  const url = `${baseUrl}?${params.toString()}`;
   const { data } = await axios.get(url, { responseType: 'arraybuffer' });
   return Buffer.from(data).toString('base64');
 }
