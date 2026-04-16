@@ -73,20 +73,26 @@ async function getStaticMap(lat, lng) {
 // Step 3: Render 4 oblique 3D views via headless Chromium + Cesium
 async function renderObliques(lat, lng) {
   const headings = [0, 90, 180, 270];
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    args: ['--disable-dev-shm-usage', '--single-process', '--no-sandbox', '--disable-gpu'],
+  });
   const screenshots = {};
 
-  for (const heading of headings) {
+  for (const [index, heading] of headings.entries()) {
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.setViewportSize({ width: 800, height: 600 });
     const params = new URLSearchParams({
       lat, lng, heading, pitch: -50, range: 130, key: GOOGLE_KEY,
     });
     const htmlPath = path.resolve(__dirname, 'public', 'cesium-viewer.html');
     await page.goto(`file://${htmlPath}?${params}`);
     await page.waitForFunction(() => window.__ready === true, { timeout: 30000 });
-    screenshots[heading] = (await page.screenshot({ type: 'png' })).toString('base64');
+    screenshots[heading] = (await page.screenshot({ type: 'jpeg', quality: 85 })).toString('base64');
     await page.close();
+
+    if (index < headings.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
   }
 
   await browser.close();
