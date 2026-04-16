@@ -2,7 +2,7 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Install Linux dependencies required by Chromium in headless mode
+# Install Linux dependencies required by Chromium + Mesa for software WebGL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
@@ -41,14 +41,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxtst6 \
     wget \
     xdg-utils \
+    libegl1-mesa \
+    libgl1-mesa-dri \
+    libgl1-mesa-glx \
+    libgles2-mesa \
+    mesa-utils \
+    libosmesa6 \
+    libvulkan1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node dependencies first for better layer caching
 COPY package*.json ./
 RUN npm install
 
-# Install Playwright Chromium browser (and ensure deps are present)
+# Install Playwright Chromium browser with all dependencies
+# Use full chromium (not headless-shell) for WebGL/Cesium support
 RUN npx playwright install chromium --with-deps
+
+# Set environment to prefer full Chromium over headless shell
+ENV PLAYWRIGHT_CHROMIUM_USE_HEADLESS_NEW=1
 
 # Copy application source
 COPY . .

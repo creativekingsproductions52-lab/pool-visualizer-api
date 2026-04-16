@@ -74,28 +74,52 @@ async function getStaticMap(lat, lng) {
 async function renderObliques(lat, lng) {
   const headings = [0, 90, 180, 270];
   const browser = await chromium.launch({
-    args: ['--disable-dev-shm-usage', '--single-process', '--no-sandbox', '--disable-gpu'],
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-setuid-sandbox',
+      '--use-gl=swiftshader',
+      '--use-angle=swiftshader-webgl',
+      '--enable-webgl',
+      '--ignore-gpu-blocklist',
+      '--enable-unsafe-swiftshader',
+      '--disable-web-security',
+    ],
   });
   const screenshots = {};
 
-  for (const [index, heading] of headings.entries()) {
-    const page = await browser.newPage();
-    await page.setViewportSize({ width: 800, height: 600 });
-    const params = new URLSearchParams({
-      lat, lng, heading, pitch: -50, range: 130, key: GOOGLE_KEY,
-    });
-    const htmlPath = path.resolve(__dirname, 'public', 'cesium-viewer.html');
-    await page.goto(`file://${htmlPath}?${params}`);
-    await page.waitForFunction(() => window.__ready === true, { timeout: 30000 });
-    screenshots[heading] = (await page.screenshot({ type: 'jpeg', quality: 85 })).toString('base64');
-    await page.close();
+  try {
+    for (const [index, heading] of headings.entries()) {
+      console.log(`  Rendering oblique view ${heading}° (${index + 1}/4)`);
+      const context = await browser.newContext({
+        viewport: { width: 800, height: 600 },
+        ignoreHTTPSErrors: true,
+      });
+      const page = await context.newPage();
 
-    if (index < headings.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Log browser console for debugging
+      page.on('console', msg => {
+        if (msg.type() === 'error') console.log(`  Browser console error: ${msg.text()}`);
+      });
+      page.on('pageerror', err => console.log(`  Page error: ${err.message}`));
+
+      const params = new URLSearchParams({
+        lat, lng, heading, pitch: -50, range: 130, key: GOOGLE_KEY,
+      });
+      const htmlPath = path.resolve(__dirname, 'public', 'cesium-viewer.html');
+      await page.goto(`file://${htmlPath}?${params}`, { waitUntil: 'networkidle', timeout: 60000 });
+      await page.waitForFunction(() => window.__ready === true, { timeout: 60000 });
+      screenshots[heading] = (await page.screenshot({ type: 'jpeg', quality: 85 })).toString('base64');
+      await context.close();
+
+      if (index < headings.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
+  } finally {
+    await browser.close();
   }
-
-  await browser.close();
   return screenshots;
 }
 
